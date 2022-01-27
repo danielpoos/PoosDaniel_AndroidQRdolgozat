@@ -57,7 +57,6 @@ public class MainActivity extends AppCompatActivity {
         });
         kiirBtn.setOnClickListener(view -> {
             timer = new Timer();
-            Toast.makeText(this, "yeee", Toast.LENGTH_SHORT).show();
             TimerTask tt = new TimerTask() {
                 @Override
                 public void run() {
@@ -68,7 +67,6 @@ public class MainActivity extends AppCompatActivity {
                     }
                 }
             };
-            Toast.makeText(this, "naah", Toast.LENGTH_SHORT).show();
             timer.schedule(tt,0);
             timer.cancel();
         });
