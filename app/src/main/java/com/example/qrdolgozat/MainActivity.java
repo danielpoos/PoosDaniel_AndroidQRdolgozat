@@ -2,11 +2,12 @@ package com.example.qrdolgozat;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import androidx.appcompat.app.AlertDialog;
+import android.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 
 import android.Manifest;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
@@ -29,6 +30,7 @@ import com.google.zxing.integration.android.IntentIntegrator;
 import com.google.zxing.integration.android.IntentResult;
 import com.journeyapps.barcodescanner.BarcodeEncoder;
 
+import java.io.IOException;
 import java.util.Timer;
 import java.util.TimerTask;
 
@@ -41,6 +43,8 @@ public class MainActivity extends AppCompatActivity {
     private Timer timer;
     private LocationListener ll;
     private LocationManager lm;
+    private AlertDialog ad;
+    private AlertDialog.Builder b;
 
     @Override protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -54,21 +58,6 @@ public class MainActivity extends AppCompatActivity {
             intentIntegrator.setBeepEnabled(false);
             intentIntegrator.setBarcodeImageEnabled(true);
             intentIntegrator.initiateScan();
-        });
-        kiirBtn.setOnClickListener(view -> {
-            timer = new Timer();
-            TimerTask tt = new TimerTask() {
-                @Override
-                public void run() {
-                    try {
-                        CodeWrite.write(out.getText().toString(),longitude,latitude);
-                    }catch(Exception e){
-                        e.printStackTrace();
-                    }
-                }
-            };
-            timer.schedule(tt,0);
-            timer.cancel();
         });
         koorBtn.setOnClickListener(view -> {
             String text = String.format("%f,%f",longitude, latitude);
@@ -85,6 +74,30 @@ public class MainActivity extends AppCompatActivity {
                 }
             }
         });
+    }
+
+    @Override
+    protected void onStart() {
+        super.onStart();
+        timer = new Timer();
+        TimerTask tt = new TimerTask() {
+            @Override
+            public void run() {
+                kiirBtn.setOnClickListener(view -> {
+                    try {
+                    CodeWrite.write(out.getText().toString(),longitude,latitude);
+                    } catch(IOException e){
+                        e.printStackTrace();
+                    }
+                });
+            }
+        };
+        timer.schedule(tt,0);
+    }
+    @Override
+    protected void onStop() {
+        timer.cancel();
+        super.onStop();
     }
 
     public void initialize(){
@@ -124,7 +137,30 @@ public class MainActivity extends AppCompatActivity {
                 try {
                     Uri url = Uri.parse(iresult.getContents());
                     Intent intent = new Intent(Intent.ACTION_VIEW,url);
-                    startActivity(intent);
+                    b = new AlertDialog.Builder(MainActivity.this);
+                    b.setMessage("Are you willing to follow the link?");
+                    b.setPositiveButton("No", new DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(DialogInterface dialog, int which) {
+                            Toast.makeText(MainActivity.this, "Nem zártad be az alkalmazás!",
+                                    Toast.LENGTH_SHORT).show();
+                        }
+                    });
+                    b.setNegativeButton("Yes", new DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(DialogInterface dialog, int which) {
+                            startActivity(intent);
+                        }
+                    });
+                    b.setNeutralButton("Not now", new DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(DialogInterface dialog, int which) {
+
+                        }
+                    });
+                    b.setCancelable(false);
+                    ad = b.create();
+                    ad.show();
                 }catch (Exception e){
                     Log.d(e.toString(),"?");
                 }
